@@ -50,9 +50,11 @@
 **(Note to self before submitting):** This whole section is my draft to get you started — the assignment explicitly wants *your* reasoning here, not AI-generated argument. Read it, decide if you actually agree, and rewrite it in your own voice/logic before this goes in the real submission.
 
 ## Comment 6 — Rebase
-**What conflicted:**
-**How I resolved it:**
-**How I verified no conflict remains:**
+**What conflicted:** While this branch was open, `main` merged a refactor (`refactor: migrate film IDs from integer to UUID`) that changed `Film.id` from `db.Integer` to `db.String(36)` (UUID), and — since the watchlist feature doesn't exist on `main` — that same refactor commit deleted the `WatchlistEntry` class from `models.py` entirely. Running `git fetch origin && git rebase origin/main` actually produced **no textual conflict markers**: the watchlist branch never touched `models.py` before this, so replaying its commits on top of `main` applied cleanly. The real problem was semantic, not textual — after the clean rebase, `services/watchlist_service.py` still did `from models import Film, WatchlistEntry`, but `WatchlistEntry` no longer existed anywhere in `models.py`, which would fail at import time.
+
+**How I resolved it:** Re-added the `WatchlistEntry` class to `models.py`, in the same place it used to live, but with `film_id = db.Column(db.String(36), db.ForeignKey("film.id"), nullable=False)` instead of `db.Integer` — matching how `CollectionEntry.film_id` was migrated in the same refactor commit. Kept `date_added` and `public` unchanged. Also cleaned up a stale docstring in `watchlist_service.py` that said `film_id (int): ID of the film. (Note: integer — pre-refactor)`, updating it to reflect UUIDs. Rebasing also replayed my earlier "add missing Film relationship for WatchlistEntry" fix commit, which references `"WatchlistEntry"` by string name in `db.relationship(...)` — that line landed fine once the class existed again, but would have caused a mapper configuration error at app-startup time if I'd only fixed the import and not the model.
+
+**How I verified no conflict remains:** Ran `pytest tests/ -v` after the rebase — all 12 tests pass, now running against UUID `Film.id` end to end (via the shared `sample_film` fixture, which creates a `Film` row and lets the model assign its own UUID). Confirmed with `git log --merges --oneline origin/main..HEAD` (empty output) that the rebase produced no merge commits, and `git log --oneline origin/main..HEAD` shows a clean, linear history on top of `main`.
 
 ## Commit History
 
