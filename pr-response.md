@@ -37,9 +37,13 @@
 **Tradeoff acknowledged:**
 
 ## Comment 5 — Sort order
-**My position:**
-**Reasoning:**
-**Engagement with reviewer's point:**
+**My position:** [DRAFT — rewrite in your own words before submitting] I agree with the maintainer: `get_watchlist()` should sort by `date_added` descending (newest first), not alphabetically by title. Changed `order_by(Film.title.asc())` to `order_by(WatchlistEntry.date_added.desc())`.
+
+**Reasoning:** [DRAFT] A watchlist is a queue of intent, not a reference catalog. `get_collection()` already sorts by `date_added.desc()` for exactly this reason — collection entries represent things you've *done*, and users want to see what they logged most recently at the top. The watchlist is the same shape of data: an ordered log of "I want to watch this," not an alphabetized index a user is trying to look something up in. Alphabetical order actively works against the primary use case (a user opening their watchlist to decide what to watch next probably cares about recency/intent, not the letter a title starts with), and it's inconsistent with the rest of the app's sort conventions for no clear reason.
+
+**Engagement with reviewer's point:** [DRAFT] The maintainer's reasoning — "most users want to see what they added recently" — is the same argument that already justifies `get_collection()`'s sort order, so I don't think there's a case for the watchlist to be the odd one out here. The one place I'd push back if given the choice: if CineLog ever adds a "long watchlist" power-user flow (someone with 200+ saved films trying to find one specific title), alphabetical sort becomes valuable again as a lookup mechanism — at that point I'd advocate for a client-side or query-param sort toggle rather than reversing the default, since the default should optimize for the common case, not the power-user edge case.
+
+**(Note to self before submitting):** This whole section is my draft to get you started — the assignment explicitly wants *your* reasoning here, not AI-generated argument. Read it, decide if you actually agree, and rewrite it in your own voice/logic before this goes in the real submission.
 
 ## Comment 6 — Rebase
 **What conflicted:**
