@@ -29,7 +29,7 @@
 **Why this edge case:** Comment 2 asked for a dedup check, and the tests in Comment 3 confirm dedup rejects a *repeat* add by the *same* user. But nothing in the existing tests pins down what the dedup key actually is — it would be easy to accidentally implement this as "a film can only be on one watchlist, period" (e.g. a unique constraint on `film_id` alone) instead of "a user can't add the same film twice" (unique on `(user_id, film_id)`). Since watchlists are personal by design, silently blocking a second user from watchlisting a popular film would be a real, easy-to-miss bug that the required tests wouldn't catch. This test locks in the correct scope of the dedup logic added in Comment 2.
 
 ## Stretch — Visibility toggle endpoint
-**What I did:**
+**What I did:** Added a `public` keyword parameter to `add_to_watchlist(user_id, film_id, public=True)`, passed straight through to the `WatchlistEntry` constructor. `POST /watchlist/<user_id>/add` now reads `public` from the JSON body via `data.get("public", True)` — if the caller omits it, behavior is unchanged (defaults to `True`, same as the model's own column default); if they pass `false`, that value is respected on the created entry. This lets a caller set visibility explicitly at creation time instead of always inheriting the model default, which is what Comment 4 asked for. Added `test_add_to_watchlist_public_false_is_respected` to confirm the override actually persists.
 
 ## Comment 4 — Default visibility
 **My position:**

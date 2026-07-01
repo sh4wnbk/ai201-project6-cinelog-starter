@@ -155,3 +155,16 @@ def test_add_to_watchlist_same_film_different_users_both_succeed(app, sample_fil
 
         count = WatchlistEntry.query.filter_by(film_id=sample_film).count()
         assert count == 2
+
+
+# ── Visibility toggle ─────────────────────────────────────────────────────────
+
+def test_add_to_watchlist_public_false_is_respected(app, sample_user, sample_film):
+    """
+    Passing public=False should override the default and persist as private.
+    """
+    with app.app_context():
+        entry = add_to_watchlist(
+            user_id=sample_user, film_id=sample_film, public=False
+        )
+        assert entry.public is False
