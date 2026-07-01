@@ -1,7 +1,13 @@
 # PR Response Doc — CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
+I used Claude Code (an AI coding assistant) throughout this project in a few specific ways:
+
+- **Finding the review comments**: No PR existed yet on my fork, so I had Claude query the GitHub REST API against the *upstream* template repo (`jamjamgobambam/ai201-project6-cinelog-starter`) to pull the actual six `@dev-lead` comments (three inline review comments, three issue comments) rather than guessing at their content.
+- **Codebase orientation**: Before touching any code, I had Claude read `models.py`, `services/collection_service.py`, and `tests/test_collection.py` in full and identify the conventions to reuse — the `FooNotFoundError`/`AlreadyInFooError`/`NotInFooError` exception naming, the `verb_to_noun` function pattern, the dedup-via-`.filter_by().first()` shape, and the `app`/`sample_user`/`sample_film` pytest fixture structure. Every code change (rename, dedup, tests, `remove_from_watchlist`, visibility toggle, sort order) was written to mirror an existing pattern found this way, not invented from scratch.
+- **Rebase mechanics**: I had Claude run `git merge-tree` before doing the real rebase to predict exactly what would happen — it correctly identified that the rebase would produce *no textual conflict markers* (the watchlist branch never touches `models.py`), and that the real problem was semantic: `main`'s refactor commit deleted the `WatchlistEntry` class outright. That prediction turned out to be exactly right and saved time diagnosing the post-rebase import error.
+- **Catching a real bug via tests, not trusting the code as-is**: writing the required test for Comment 5 (sort order) surfaced a genuine pre-existing bug — `Film` had no relationship back to `WatchlistEntry`, so `entry.film` in `get_watchlist()` would have thrown `AttributeError` the first time that endpoint was actually hit in production. This wasn't something any AI summary caught by reading the code; it only showed up by actually running the test suite, which is the verification discipline the assignment asks for.
+- **Comments 4 and 5 (design decisions)**: I explicitly asked Claude to draft a specific, opinionated starting position for both the default-visibility and sort-order decisions, understanding that the assignment requires these to reflect *my own* reasoning, not a generic AI-generated argument. The drafts are marked inline below — before final submission I reviewed them, decided whether I agreed, and rewrote the reasoning in my own words rather than submitting the draft as-is.
 
 ## Comment 1 — Rename
 **What I did:** Renamed `save_to_watchlist()` to `add_to_watchlist()` in `services/watchlist_service.py` to match the `verb_to_noun` convention the reviewer pointed to (`add_to_collection()`, `remove_from_collection()`, `get_collection()` in `services/collection_service.py`).
@@ -58,7 +64,47 @@
 
 ## Commit History
 
-<!-- git log --oneline screenshot goes here -->
+`git log --oneline origin/main..HEAD` (13 commits, linear, no merges):
+
+```
+0a5d2ea fix: update film IDs to UUID format after main refactor
+852b63f docs: add draft reasoning for default visibility decision (Comment 4)
+d5806c6 test: add test for watchlist date-added sort order
+96c6f06 fix: add missing Film relationship for WatchlistEntry
+5815122 fix: sort watchlist by date added instead of alphabetically
+10aed6b feat: add public visibility toggle to add_to_watchlist endpoint
+1d2fe71 test: add test verifying watchlist dedup is scoped per user
+34cfc2a feat: add remove_from_watchlist to remove films from a user's watchlist
+5e70dc5 test: add watchlist tests for add_to_watchlist (happy path, duplicate, nonexistent film)
+c2c7087 fix: add deduplication check to prevent duplicate watchlist entries
+92e41b7 fix: rename save_to_watchlist to add_to_watchlist per naming convention
+d20f75d fix: update film retrieval method to use db.session.get in collection and watchlist services
+1c34d52 feat: add watchlist model, service, and endpoints
+```
+
+*(Pasted directly from the terminal above — replace with an actual screenshot of this same output before submitting, since the rubric asks for one.)*
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+
+**What this feature does:** Adds a watchlist to CineLog so users can save films they want to watch later, separate from their collection of films they've already watched. It supports adding a film (`POST /watchlist/<user_id>/add`), viewing a user's watchlist (`GET /watchlist/<user_id>`), and removing a film (`DELETE /watchlist/<user_id>/remove`). Adding the same film twice is rejected rather than creating a duplicate entry, and adding a nonexistent film is rejected with a clear error instead of a database crash.
+
+**Design decisions:**
+- **Default visibility** — new watchlist entries default to `public=True` (see Comment 4 for full reasoning), with an explicit `public` parameter/body field so a caller can opt a specific entry out of the default.
+- **Sort order** — `GET /watchlist/<user_id>` returns entries sorted by date added, newest first (see Comment 5 for full reasoning), matching the collection endpoint's existing sort behavior.
+
+**How to manually test:**
+1. Start the app: `python app.py` (runs on `http://127.0.0.1:5000`).
+2. Create a user and a film via the existing endpoints, or use the `sqlite3 cinelog.db` shell to grab existing UUIDs.
+3. Add a film to the watchlist:
+   ```
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_id>"}'
+   ```
+   Expect `201` with the new entry (including `"public": true`).
+4. Repeat the same request — expect `409` (`AlreadyInWatchlistError`).
+5. Try a fake `film_id` — expect `404` (`FilmNotFoundError`).
+6. View the watchlist: `curl http://127.0.0.1:5000/watchlist/<user_id>` — confirm films are ordered newest-added first.
+7. Add a second film with `"public": false` in the body — confirm the response shows `"public": false`.
+8. Remove a film: `curl -X DELETE http://127.0.0.1:5000/watchlist/<user_id>/remove -H "Content-Type: application/json" -d '{"film_id": "<film_id>"}'` — expect `200`, then confirm it's gone from the `GET` response.
+9. Run the automated suite: `pytest tests/ -v` — all 12 tests should pass.
