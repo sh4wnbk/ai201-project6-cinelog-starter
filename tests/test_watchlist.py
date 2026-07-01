@@ -132,3 +132,26 @@ def test_remove_from_watchlist_not_in_watchlist_raises(app, sample_user, sample_
     with app.app_context():
         with pytest.raises(NotInWatchlistError):
             remove_from_watchlist(user_id=sample_user, film_id=sample_film)
+
+
+# ── Dedup is scoped per user ──────────────────────────────────────────────────
+
+def test_add_to_watchlist_same_film_different_users_both_succeed(app, sample_film):
+    """
+    The Comment 2 dedup check is keyed on (user_id, film_id), not film_id
+    alone. Two different users adding the same film should both succeed —
+    this isn't a global "one watchlist per film" constraint.
+    """
+    with app.app_context():
+        user_a = User(username="user_a", email="a@example.com")
+        user_b = User(username="user_b", email="b@example.com")
+        db.session.add_all([user_a, user_b])
+        db.session.commit()
+
+        entry_a = add_to_watchlist(user_id=user_a.id, film_id=sample_film)
+        entry_b = add_to_watchlist(user_id=user_b.id, film_id=sample_film)
+
+        assert entry_a.id != entry_b.id
+
+        count = WatchlistEntry.query.filter_by(film_id=sample_film).count()
+        assert count == 2
