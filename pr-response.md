@@ -19,8 +19,9 @@
 **How I verified:** Ran `pytest tests/test_watchlist.py -v` — all 3 tests pass — then `pytest tests/ -v` for the full 7-test suite (existing collection tests + new watchlist tests), all green.
 
 ## Stretch — remove_from_watchlist()
-**What I did:**
-**How I verified:**
+**What I did:** Added `remove_from_watchlist(user_id, film_id)` to `services/watchlist_service.py`, following `remove_from_collection()`'s exact pattern in `services/collection_service.py`: look up the entry by `(user_id, film_id)`, raise a dedicated error (`NotInWatchlistError`, new here, mirroring `NotInCollectionError`) if it doesn't exist, otherwise delete and commit and return `True`. Added a matching `DELETE /watchlist/<user_id>/remove` route in `routes/watchlist/watchlist.py`, mirroring `routes/collection.py`'s remove endpoint (same body shape, same 404-on-missing behavior).
+
+**How I verified:** Added `test_remove_from_watchlist_removes_entry` (confirms the row is actually gone from the DB after removal, not just that no exception was raised) and `test_remove_from_watchlist_not_in_watchlist_raises` (confirms removing a film that was never added raises `NotInWatchlistError` rather than silently no-op'ing). Both pass as part of the full `pytest tests/ -v` run (9/9 passing).
 
 ## Stretch — Second test
 **What I did:**
