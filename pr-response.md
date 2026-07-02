@@ -68,6 +68,16 @@ Where I'd add a subtle difference: if CineLog eventually supports very large wat
 
 **How I verified no conflict remains:** Ran `pytest tests/ -v` after the rebase — all 12 tests pass, now running against UUID `Film.id` end to end (via the shared `sample_film` fixture, which creates a `Film` row and lets the model assign its own UUID). Confirmed with `git log --merges --oneline origin/main..HEAD` (empty output) that the rebase produced no merge commits, and `git log --oneline origin/main..HEAD` shows a clean, linear history on top of `main`.
 
+## GitHub Copilot automated review
+
+GitHub auto-requested `copilot-pull-request-reviewer` on this PR, which left 5 comments. I checked each against the actual code before acting:
+
+- **Missing `routes/watchlist/__init__.py`** — not applicable. Python 3.11 (what this app runs on) supports implicit namespace packages; I confirmed `create_app()` imports cleanly and the full test suite passes without one.
+- **`WatchlistEntry` missing a DB-level unique constraint on `(user_id, film_id)`** — valid. `CollectionEntry` has `unique_user_film_collection`; `WatchlistEntry` didn't have the equivalent, so the service-layer dedup check alone couldn't stop a duplicate under concurrent requests. Added `unique_user_film_watchlist`.
+- **Unnecessary `.join(Film)` in `get_watchlist()`** — valid. Left over from switching the sort to `WatchlistEntry.date_added`; the join wasn't doing eager-loading and `get_collection()` doesn't join either. Removed it.
+- **Stale module docstring path in `routes/watchlist/watchlist.py`** — valid, trivial. Said `routes/watchlist.py`; fixed to match the real path.
+- **`pr-response.md` still had `[DRAFT]` markers** — stale by the time I read it; that review ran against an earlier commit, before I finalized the Comment 4/5 wording and added the screenshot.
+
 ## Commit History
 
 `git log --oneline origin/main..HEAD`, showing conventional commit messages with no merge commits:
