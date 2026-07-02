@@ -70,25 +70,9 @@ Where I'd add a subtle difference: if CineLog eventually supports very large wat
 
 ## Commit History
 
-`git log --oneline origin/main..HEAD` (13 commits, linear, no merges):
+`git log --oneline origin/main..HEAD`, showing conventional commit messages with no merge commits:
 
-```
-0a5d2ea fix: update film IDs to UUID format after main refactor
-852b63f docs: add draft reasoning for default visibility decision (Comment 4)
-d5806c6 test: add test for watchlist date-added sort order
-96c6f06 fix: add missing Film relationship for WatchlistEntry
-5815122 fix: sort watchlist by date added instead of alphabetically
-10aed6b feat: add public visibility toggle to add_to_watchlist endpoint
-1d2fe71 test: add test verifying watchlist dedup is scoped per user
-34cfc2a feat: add remove_from_watchlist to remove films from a user's watchlist
-5e70dc5 test: add watchlist tests for add_to_watchlist (happy path, duplicate, nonexistent film)
-c2c7087 fix: add deduplication check to prevent duplicate watchlist entries
-92e41b7 fix: rename save_to_watchlist to add_to_watchlist per naming convention
-d20f75d fix: update film retrieval method to use db.session.get in collection and watchlist services
-1c34d52 feat: add watchlist model, service, and endpoints
-```
-
-*(Pasted directly from the terminal above — replace with an actual screenshot of this same output before submitting, since the rubric asks for one.)*
+![git log --oneline showing conventional commits with no merge commits](screenshots/commit-history.png)
 
 ## PR Description
 
