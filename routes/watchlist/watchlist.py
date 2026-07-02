@@ -1,5 +1,5 @@
 """
-routes/watchlist.py — CineLog
+routes/watchlist/watchlist.py — CineLog
 
 Endpoints for the watchlist feature.
 """
