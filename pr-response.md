@@ -84,6 +84,8 @@ GitHub auto-requested `copilot-pull-request-reviewer` on this PR, which left 5 c
 
 ![git log --oneline showing conventional commits with no merge commits](screenshots/commit-history.png)
 
+*Captured before this doc-update commit — the commit that adds this screenshot necessarily can't appear inside its own screenshot.*
+
 ## PR Description
 
 **What this feature does:** Adds a watchlist to CineLog so users can save films they want to watch later, separate from their collection of films they've already watched. It supports adding a film (`POST /watchlist/<user_id>/add`), viewing a user's watchlist (`GET /watchlist/<user_id>`), and removing a film (`DELETE /watchlist/<user_id>/remove`). Adding the same film twice is rejected rather than creating a duplicate entry, and adding a nonexistent film is rejected with a clear error instead of a database crash.
